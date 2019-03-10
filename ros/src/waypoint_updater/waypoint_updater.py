@@ -26,7 +26,7 @@ TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 
 LOOKAHEAD_WPS = 100 # Number of waypoints we will publish. You can change this number
 MAX_DECEL = 0.5
-PUBLISCH_RATE = 30
+PUBLISCH_RATE = 20
 
 
 class WaypointUpdater(object):
@@ -34,10 +34,9 @@ class WaypointUpdater(object):
         rospy.init_node('waypoint_updater')
 
         # TODO: Add other member variables you need below
-        #self.base_lane = None
+        self.base_lane = None
         self.pose = None
         self.stopline_wp_idx = -1
-        self.base_waypoints = None
         self.waypoints_2d = None
         self.waypoint_tree = None
 
@@ -54,7 +53,7 @@ class WaypointUpdater(object):
     def loop(self):
         rate = rospy.Rate(PUBLISCH_RATE)
         while not rospy.is_shutdown():
-            if self.pose and self.base_waypoints and self.waypoint_tree:
+            if self.pose and self.base_lane:
                 self.publish_waypoints()
             rate.sleep()
 
@@ -97,12 +96,12 @@ class WaypointUpdater(object):
 
         closest_idx = self.get_closest_waypoint_idx()
         farthest_idx = closest_idx + LOOKAHEAD_WPS
-        waypoints = self.base_waypoints.waypoints[closest_idx:farthest_idx]
+        base_waypoints = self.base_lane.waypoints[closest_idx:farthest_idx]
 
         if (self.stopline_wp_idx == -1) or (self.stopline_wp_idx >= farthest_idx):
-            lane.waypoints = waypoints
+            lane.waypoints = base_waypoints
         else:
-            lane.waypoints = self.decelerate_waypoints(waypoints, closest_idx)
+            lane.waypoints = self.decelerate_waypoints(base_waypoints, closest_idx)
 
         return lane
 
@@ -124,7 +123,7 @@ class WaypointUpdater(object):
         return temp
 
     def waypoints_cb(self, waypoints):
-        self.base_waypoints = waypoints
+        self.base_lane = waypoints
         if not self.waypoints_2d:
             self.waypoints_2d = [[waypoint.pose.pose.position.x, waypoint.pose.pose.position.y] for waypoint in waypoints.waypoints]
             self.waypoint_tree = KDTree(self.waypoints_2d)
