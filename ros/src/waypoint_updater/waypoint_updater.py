@@ -27,6 +27,8 @@ TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
 LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this number
+MAX_DECEL = 0.5
+PUBLISCH_RATE = 25
 
 
 class WaypointUpdater(object):
@@ -52,7 +54,7 @@ class WaypointUpdater(object):
         self.loop()
 
     def loop(self):
-        rate = rospy.Rate(50)
+        rate = rospy.Rate(PUBLISCH_RATE)
         while not rospy.is_shutdown():
             if self.pose and self.base_lane:
                 self.publish_waypoints()
@@ -65,7 +67,7 @@ class WaypointUpdater(object):
 
         #check if closest is in fornt or behind of the vehicle
         closest_coord = self.waypoints_2d[closest_idx]
-        prev_coord = self.waypoints_2d[closest_idx-1]
+        prev_coord = self.waypoints_2d[closest_idx - 1]
 
         # eval through hyperplane through closest_coord
         cl_vect = np.array(closest_coord)
@@ -73,9 +75,9 @@ class WaypointUpdater(object):
         pos_vect = np.array([x,y])
 
         val = np.dot(cl_vect - prev_vect, pos_vect - cl_vect)
-
         if val > 0:
             closest_idx = (closest_idx + 1) % len(self.waypoints_2d)
+
         return closest_idx
 
     def publish_waypoints(self):
