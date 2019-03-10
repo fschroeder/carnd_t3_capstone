@@ -106,8 +106,8 @@ class WaypointUpdater(object):
 
     def decelerate_waypoints(self, waypoints, closest_idx):
         temp = []
-        for i, wp in enumerate(waipoints):
-            p = Waipoint()
+        for i , wp in enumerate(waypoints):
+            p = Waypoint()
             p.pose = wp.pose
 
             stop_idx = max(self.stopline_wp_idx - closest_idx - 2, 0)
