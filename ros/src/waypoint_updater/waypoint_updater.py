@@ -4,12 +4,10 @@ import rospy
 from geometry_msgs.msg import PoseStamped
 from styx_msgs.msg import Lane, Waypoint
 from std_msgs.msg import Int32
-
 from scipy.spatial import KDTree
 import math
 import numpy as np
 
-import math
 
 '''
 This node will publish waypoints from the car's current position to some `x` distance ahead.
@@ -26,9 +24,9 @@ as well as to verify your TL classifier.
 TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
-LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this number
+LOOKAHEAD_WPS = 100 # Number of waypoints we will publish. You can change this number
 MAX_DECEL = 0.5
-PUBLISCH_RATE = 50
+PUBLISCH_RATE = 30
 
 
 class WaypointUpdater(object):
@@ -36,7 +34,7 @@ class WaypointUpdater(object):
         rospy.init_node('waypoint_updater')
 
         # TODO: Add other member variables you need below
-        self.base_lane = None
+        #self.base_lane = None
         self.pose = None
         self.stopline_wp_idx = -1
         self.base_waypoints = None
@@ -74,7 +72,7 @@ class WaypointUpdater(object):
         prev_vect = np.array(prev_coord)
         pos_vect = np.array([x,y])
 
-        val = np.dot(cl_vect - prev_vect, pos_vect - cl_vect)
+        val = np.dot((cl_vect - prev_vect), (pos_vect - cl_vect))
         if val > 0:
             closest_idx = (closest_idx + 1) % len(self.waypoints_2d)
 
