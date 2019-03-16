@@ -4,9 +4,10 @@ import rospy
 from geometry_msgs.msg import PoseStamped
 from styx_msgs.msg import Lane, Waypoint
 from std_msgs.msg import Int32
+import numpy as np
 from scipy.spatial import KDTree
 import math
-import numpy as np
+
 
 '''
 This node will publish waypoints from the car's current position to some `x` distance ahead.
@@ -23,7 +24,7 @@ as well as to verify your TL classifier.
 TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
-LOOKAHEAD_WPS = 100 # Number of waypoints we will publish. You can change this number
+LOOKAHEAD_WPS = 20 # Number of waypoints we will publish. You can change this number
 PUBLISH_RATE = 50
 
 
@@ -41,6 +42,7 @@ class WaypointUpdater(object):
 
         # TODO: Add other member variables you need below
         self.base_lane = None
+        self.base_waypoints = None
         self.pose = None
         self.stopline_wp_idx = -1
         self.waypoints_2d = None
@@ -51,7 +53,7 @@ class WaypointUpdater(object):
     def loop(self):
         rate = rospy.Rate(PUBLISH_RATE)
         while not rospy.is_shutdown():
-            if self.pose and self.base_lane:
+            if self.pose and self.base_lane and self.waypoint_tree:
                 self.publish_waypoints()
             rate.sleep()
 
@@ -59,6 +61,7 @@ class WaypointUpdater(object):
         self.pose = msg
 
     def waypoints_cb(self, waypoints):
+        self.base_waypoints = waypoints
         self.base_lane = waypoints
         if not self.waypoints_2d:
             self.waypoints_2d = [[waypoint.pose.pose.position.x, waypoint.pose.pose.position.y] for waypoint in waypoints.waypoints]
@@ -66,8 +69,7 @@ class WaypointUpdater(object):
 
     def traffic_cb(self, msg):
         # TODO: Callback for /traffic_waypoint message. Implement
-        if self.stopline_wp_idx != msg.data:
-            self.stopline_wp_idx = msg.data
+        self.stopline_wp_idx = msg.data
 
     def obstacle_cb(self, msg):
         # TODO: Callback for /obstacle_waypoint message. We will implement it later
@@ -101,7 +103,7 @@ class WaypointUpdater(object):
         prev_vect = np.array(prev_coord)
         pos_vect = np.array([x,y])
 
-        val = np.dot((cl_vect - prev_vect), (pos_vect - cl_vect))
+        val = np.dot(cl_vect - prev_vect, pos_vect - cl_vect)
         if val > 0:
             closest_idx = (closest_idx + 1) % len(self.waypoints_2d)
 
@@ -133,7 +135,7 @@ class WaypointUpdater(object):
 
             stop_idx = max(self.stopline_wp_idx - closest_idx - 2, 0)
             dist = self.distance(waypoints, i, stop_idx)
-            vel = math.sqrt(2 * MAX_DECEL * dist)
+            vel = math.sqrt(2 * 0.5 * dist)
             if vel < 1.:
                 vel = 0
 
